@@ -1,0 +1,5 @@
+{
+    "require": {
+        "rdehnhardt/var-dumper": "^1.3"
+    }
+}
