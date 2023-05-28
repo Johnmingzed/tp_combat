@@ -49,6 +49,14 @@ class Personnage
         return self::TARGET_HIT;
     }
 
+    public function nomValide()
+    {
+        if (empty($this->nom)) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Get the value of id
      * @return int
