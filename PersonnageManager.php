@@ -63,7 +63,7 @@ class PersonnageManager
     public function delete(Personnage $personnage)
     {
         // Préparation de la requête d'effacement via l'ID du personnage
-        $q = $this->db->prepare('DELETE FROM personnages WHERE id : id');
+        $q = $this->db->prepare('DELETE FROM personnages WHERE id = :id');
         // Assignation de l'ID
         $q->bindValue(':id', $personnage->getId());
         // Exécution de la requête
@@ -76,8 +76,8 @@ class PersonnageManager
     {
         // Exécution de la requête de comptage
         $q = $this->db->query('SELECT COUNT(*) FROM personnages');
-        // Retour du nombre de personnages
-        $q->fetchColumn();
+        // Retourne le nombre de personnages
+        return $q->fetchColumn();
     }
 
     public function getList(?string $nom)

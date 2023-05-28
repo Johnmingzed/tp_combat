@@ -88,44 +88,36 @@ class Personnage
      * Set the value of id
      *
      * @param int $id
-     * @return self
+     * @return void
      */
-    public function setId(int $id): self
+    public function setId(int $id): void
     {
         if ($id > 0) {
             $this->id = $id;
-            return $this;
         }
-        trigger_error('ID obligatoire', E_USER_ERROR);
     }
 
     /**
      * Set the value of degats
      *
      * @param int $degats
-     * @return self
+     * @return void
      */
-    public function setDegats(int $degats): self
+    public function setDegats(int $degats): void
     {
         if ($degats >= 0 && $degats <= 100) {
             $this->degats = $degats;
-            return $this;
         }
-        trigger_error('Plage de dégâts incorrecte', E_USER_NOTICE);
     }
 
     /**
      * Set the value of nom
      *
      * @param string $nom
-     * @return self
+     * @return void
      */
-    public function setNom(string $nom): self
+    public function setNom(string $nom): void
     {
-        if (!empty($nom)) {
-            $this->nom = $nom;
-            return $this;
-        }
-        trigger_error('Vous devez fournir un nom valide', E_USER_ERROR);
+        $this->nom = $nom;
     }
 }
