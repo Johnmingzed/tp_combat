@@ -52,37 +52,75 @@ class PersonnageManager
     public function update(Personnage $personnage)
     {
         // Préparation de la requête de mise à jour via l'ID du personnage
-        // Assignation des valeurs (degats, nom)
+        $q = $this->db->prepare('UPDATE personnages SET degats = :degats WHERE id = :id');
+        // Assignation des valeurs (degats, ID)
+        $q->bindValue(':id', $personnage->getId());
+        $q->bindValue(':degats', $personnage->getDegats());
         // Exécution de la requête
-        // Hydratation de personnage avec les nouvelles valeurs
+        $q->execute();
     }
 
     public function delete(Personnage $personnage)
     {
         // Préparation de la requête d'effacement via l'ID du personnage
+        $q = $this->db->prepare('DELETE FROM personnages WHERE id : id');
         // Assignation de l'ID
+        $q->bindValue(':id', $personnage->getId());
         // Exécution de la requête
+        $q->execute();
         // Effacement de l'entitée personnage
+        unset($personnage);
     }
 
     public function count()
     {
         // Exécution de la requête de comptage
+        $q = $this->db->query('SELECT COUNT(*) FROM personnages');
         // Retour du nombre de personnages
+        $q->fetchColumn();
     }
 
-    public function list()
+    public function getList(?string $nom)
     {
         // Exécution de la requête de sélection des personnages
+        if (isset($nom) && is_string($nom)) {
+            $q = $this->db->prepare('SELECT * FROM personnages WHERE nom != :nom ORDER BY nom');
+            $q->bindValue(':nom', $nom);
+            $q->execute();
+        } else {
+            $q = $this->db->query('SELECT * FROM personnages ORDER BY nom');
+        }
+        $dataPersonnages = $q->fetchAll(PDO::FETCH_ASSOC);
         // Construction d'un tableau de personnage
+        $personnagesList = [];
+        foreach ($dataPersonnages as $personnage) {
+            $personnagesList[] = new Personnage($personnage);
+        }
         // Retour de la liste
+        return $personnagesList;
     }
 
     public function exists(int|string $info)
     {
-        // Si $info est un int, c'est un ID
-        // On exécute une requête COUNT() avec WHERE id=$info et on retourne un bool
-        // Si $info est un string, c'est un nom
-        // On exécute une requête COUNT() avec WHERE nom=$info et on retourne un bool
+        if (isset($info)) {
+            // Si $info est un int, c'est un ID, on prépare une requête COUNT avec WHERE id = $info
+            if (is_int($info)) {
+                $q = $this->db->prepare('SELECT COUNT(*) FROM personnages WHERE id = :info');
+            }
+            // Si $info est un string, c'est un nom, on prépare une requête COUNT avec WHERE nom = $info
+            if (is_string($info)) {
+                $q = $this->db->prepare('SELECT COUNT(*) FROM personnages WHERE nom = :info');
+            }
+            // On exécute la requête et on retourne un bool
+            $q->bindValue(':info', $info);
+            $q->execute();
+            $result = $q->fetchColumn();
+            if ($result == 1) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return false;
     }
 }
