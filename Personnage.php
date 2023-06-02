@@ -1,18 +1,25 @@
 <?php
 
-class Personnage
+abstract class Personnage
 {
     private int $id;
     private int $degats = 0;
     private string $nom;
+    private int $timeEndormi = 0;
+    private string $type;
+    private int $atout = 0;
 
+    const DAMAGE = 5;
     const TARGET_ME = 1;
     const TARGET_DEATH = 2;
     const TARGET_HIT = 3;
-    const DAMAGE = 5;
+    const TARGET_SLEEP = 4;
+    const NO_MANA = 5;
+    const ASLEEP = 6;
 
     public function __construct(array $data)
     {
+        $this->type = strtolower(get_class($this));
         $this->hydrate($data);
     }
 
@@ -28,6 +35,9 @@ class Personnage
 
     public function frapper(Personnage $cible)
     {
+        if($this->estEndormi()){
+            return self::ASLEEP;
+        }
         // Vérifier qu'on ne se frappe pas soi-même
         if ($cible->getId() == $this->id) {
             return self::TARGET_ME;
@@ -47,6 +57,17 @@ class Personnage
         }
         // Sinon on confirme la prise de dégâts
         return self::TARGET_HIT;
+    }
+
+    public function estEndormi(): bool
+    {
+        return $this->reveilTime() >= 0 ? true : false;
+    }
+
+    public function reveilTime(): int
+    {
+        $reveil = $this->getTimeEndormi() - time();
+        return $reveil;
     }
 
     public function nomValide()
@@ -85,6 +106,26 @@ class Personnage
     }
 
     /**
+     * Get the value of timeEndormi
+     *
+     * @return int
+     */
+    public function getTimeEndormi(): int
+    {
+        return $this->timeEndormi;
+    }
+
+    /**
+     * Get the value of atout
+     *
+     * @return int
+     */
+    public function getAtout(): int
+    {
+        return $this->atout;
+    }
+
+    /**
      * Set the value of id
      *
      * @param int $id
@@ -119,5 +160,50 @@ class Personnage
     public function setNom(string $nom): void
     {
         $this->nom = $nom;
+    }
+
+    /**
+     * Set the value of timeEndormi
+     *
+     * @param int $time
+     *
+     * @return void
+     */
+    public function setTimeEndormi(int $time): void
+    {
+        if ($time >= 0) {
+            $this->timeEndormi = $time;
+        }
+    }
+
+
+    /**
+     * Set the value of atout
+     *
+     * @param int $atout
+     *
+     * @return void
+     */
+    public function setAtout(): void
+    {
+        $degats = $this->getDegats();
+        switch (true) {
+            case $degats <= 25:
+                $atout = 4;
+                break;
+            case $degats <= 50:
+                $atout = 3;
+                break;
+            case $degats <= 75:
+                $atout = 2;
+                break;
+            case $degats <= 90:
+                $atout = 1;
+                break;
+            default:
+                $atout = 0;
+                break;
+        }
+        $this->atout = $atout;
     }
 }

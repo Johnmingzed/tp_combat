@@ -1,9 +1,17 @@
 [
-{"type":"header","version":"5.2.0","comment":"Export to JSON plugin for PHPMyAdmin"},
-{"type":"database","name":"combat"},
-{"type":"table","name":"personnages","database":"combat","data":
-[
-
-]
-}
+    {
+        "type": "header",
+        "version": "5.2.0",
+        "comment": "Export to JSON plugin for PHPMyAdmin"
+    },
+    {
+        "type": "database",
+        "name": "combat"
+    },
+    {
+        "type": "table",
+        "name": "personnages",
+        "database": "combat",
+        "data": []
+    }
 ]
