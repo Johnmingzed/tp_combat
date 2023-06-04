@@ -17,15 +17,17 @@ class PersonnageManager
     public function add(Personnage $personnage)
     {
         // Préparation de la requête d'insertion
-        $q = $this->db->prepare('INSERT INTO personnages SET nom = :nom');
-        // Assignation des valeurs (nom)
+        $q = $this->db->prepare('INSERT INTO personnages (nom, type) VALUES (:nom, :type)');
+        // Assignation des valeurs (nom et type)
         $q->bindValue(':nom', $personnage->getNom());
+        $q->bindValue(':type', $personnage->getType());
         // Exécution de la requête
         $q->execute();
         // Hydratation du personnage avec assignation de son ID et paramêtres initiaux (dégats)
         $personnage->hydrate(array(
             'id' => $this->db->lastInsertId(),
-            'degats' => 0
+            'degats' => 0,
+            'atout' => 0
         ));
     }
 
@@ -45,17 +47,26 @@ class PersonnageManager
             $q->bindValue(':info', $info);
             $q->execute();
             $dataPersonnage = $q->fetch(PDO::FETCH_ASSOC);
-            return new Personnage($dataPersonnage);
+            switch ($dataPersonnage['type']) {
+                case 'guerrier':
+                    return new Guerrier($dataPersonnage);
+                case 'magicien':
+                    return new Magicien($dataPersonnage);
+                default:
+                    return null;
+            }
         }
     }
 
     public function update(Personnage $personnage)
     {
         // Préparation de la requête de mise à jour via l'ID du personnage
-        $q = $this->db->prepare('UPDATE personnages SET degats = :degats WHERE id = :id');
+        $q = $this->db->prepare('UPDATE personnages SET degats = :degats, atout = :atout, timeEndormi = :timeEndormi WHERE id = :id');
         // Assignation des valeurs (degats, ID)
         $q->bindValue(':id', $personnage->getId());
         $q->bindValue(':degats', $personnage->getDegats());
+        $q->bindValue(':atout', $personnage->getAtout());
+        $q->bindValue(':timeEndromi', $personnage->getTimeEndormi());
         // Exécution de la requête
         $q->execute();
     }
@@ -94,7 +105,12 @@ class PersonnageManager
         // Construction d'un tableau de personnage
         $personnagesList = [];
         foreach ($dataPersonnages as $personnage) {
-            $personnagesList[] = new Personnage($personnage);
+            switch ($personnage['type']) {
+                case 'guerrier':
+                    return $personnagesList[] = new Guerrier($personnage);
+                case 'magicien':
+                    return $personnagesList[] = new Magicien($personnage);
+            }
         }
         // Retour de la liste
         return $personnagesList;

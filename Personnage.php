@@ -35,7 +35,7 @@ abstract class Personnage
 
     public function frapper(Personnage $cible)
     {
-        if($this->estEndormi()){
+        if ($this->estEndormi()) {
             return self::ASLEEP;
         }
         // Vérifier qu'on ne se frappe pas soi-même
@@ -123,6 +123,16 @@ abstract class Personnage
     public function getAtout(): int
     {
         return $this->atout;
+    }
+
+    /**
+     * Get the value of atout
+     *
+     * @return string
+     */
+    public function getType(): string
+    {
+        return $this->type;
     }
 
     /**
