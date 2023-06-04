@@ -62,11 +62,11 @@ class PersonnageManager
     {
         // Préparation de la requête de mise à jour via l'ID du personnage
         $q = $this->db->prepare('UPDATE personnages SET degats = :degats, atout = :atout, timeEndormi = :timeEndormi WHERE id = :id');
-        // Assignation des valeurs (degats, ID)
+        // Assignation des valeurs (degats, ID, atout et timeEndormi)
         $q->bindValue(':id', $personnage->getId());
         $q->bindValue(':degats', $personnage->getDegats());
         $q->bindValue(':atout', $personnage->getAtout());
-        $q->bindValue(':timeEndromi', $personnage->getTimeEndormi());
+        $q->bindValue(':timeEndormi', $personnage->getTimeEndormi());
         // Exécution de la requête
         $q->execute();
     }
@@ -107,9 +107,11 @@ class PersonnageManager
         foreach ($dataPersonnages as $personnage) {
             switch ($personnage['type']) {
                 case 'guerrier':
-                    return $personnagesList[] = new Guerrier($personnage);
+                    $personnagesList[] = new Guerrier($personnage);
+                    break;
                 case 'magicien':
-                    return $personnagesList[] = new Magicien($personnage);
+                    $personnagesList[] = new Magicien($personnage);
+                    break;
             }
         }
         // Retour de la liste

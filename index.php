@@ -33,24 +33,41 @@ if (isset($_SESSION['personnage'])) {
     $personnage = $_SESSION['personnage'];
 }
 
+// Création d'un nouveau personnage
 if (isset($_POST['creer']) && isset($_POST['nom'])) {
-    $personnage = new Personnage(['nom' => $_POST['nom']]);
-
-    if (!$personnage->nomValide()) {
-        $msg = 'Le nom choisi est invalide';
-        unset($personnage);
-    } elseif ($manager->exists($personnage->getNom())) {
-        $msg = 'Le nom du personnage est déjà pris.';
-        unset($personnage);
-    } else {
-        $manager->add($personnage);
+    switch ($_POST['type']) {
+        case 'guerrier':
+            $personnage = new Guerrier(['nom' => $_POST['nom']]);
+            break;
+        case 'magicien':
+            $personnage = new Magicien(['nom' => $_POST['nom']]);
+            break;
+        default:
+            $msg = 'Le type du personnage est invalide.';
+            break;
     }
+
+    if (isset($personnage)) {
+        if (!$personnage->nomValide()) {
+            $msg = 'Le nom choisi est invalide';
+            unset($personnage);
+        } elseif ($manager->exists($personnage->getNom())) {
+            $msg = 'Le nom du personnage est déjà pris.';
+            unset($personnage);
+        } else {
+            $manager->add($personnage);
+        }
+    }
+
+    // Utilisation d'un personnage existant
 } elseif (isset($_POST['utiliser']) && isset($_POST['nom'])) {
     if ($manager->exists($_POST['nom'])) {
         $personnage = $manager->select($_POST['nom']);
     } else {
         $msg = 'Ce personnage n\'existe pas.';
     }
+
+    // Attaquer un adversaire
 } elseif (isset($_GET['attaquer'])) {
     if (!isset($personnage)) {
         $msg = 'Vous devez créer ou utiliser un personnage existant avant d\'attaquer.';
@@ -74,11 +91,61 @@ if (isset($_POST['creer']) && isset($_POST['nom'])) {
                     $manager->update($personnage);
                     $manager->delete($cible);
                     break;
+                case Personnage::ASLEEP:
+                    $msg = 'Vous dormez profondemment et ne pouvez rien faire...';
+                    break;
             }
+        }
+    }
+
+    // Endormir un adversaire
+} elseif (isset($_GET['endormir'])) {
+    if (!isset($personnage)) {
+        $msg = 'Vous devez créer ou utiliser un personnage existant avant d\'agir.';
+    } else {
+        if (!$manager->exists((int) $_GET['endormir'])) {
+            $msg = 'L\'ennemi que vous voulez ensorceler n\'existe pas !';
+        } else {
+            $cible = $manager->select((int) $_GET['endormir']);
+            $retour = $personnage->lancerSort($cible);
+            switch ($retour) {
+                case Personnage::TARGET_ME:
+                    $msg = 'La fatigue est grande mais ce n\'est pas le moment de vous endormir...';
+                    break;
+                case Personnage::TARGET_SLEEP:
+                    $msg = 'Vous avez endormi ' . $cible->getNom() . ' !';
+                    $manager->update($personnage);
+                    $manager->update($cible);
+                    break;
+                case Personnage::NO_MANA:
+                    $msg = 'Vous n\'avez plus de magie !';
+                    break;
+                case Personnage::ASLEEP:
+                    $msg = 'Vous dormez profondemment et ne pouvez rien faire...';
+                    break;
+            }
+        }
+    }
+} elseif (isset($_GET['reveiller'])) {
+    if (!isset($personnage)) {
+        $msg = 'Vous devez créer ou utiliser un personnage existant avant de lever un sort.';
+    } else {
+        if (!$manager->exists((int) $_GET['reveiller'])) {
+            $msg = 'L\'ennemi que vous voulez ensorceler n\'existe pas !';
+        } else {
+            $cible = $manager->select((int) $_GET['reveiller']);
+            $cible->setTimeEndormi(0);
+            $manager->update($personnage);
+            $manager->update($cible);
+            $msg = 'Sortilège de sommeil levé sur ' . $cible->getNom();
         }
     }
 }
 ?>
+
+
+
+<!-- AFFICHAGE DE LA VUE -->
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -98,15 +165,32 @@ if (isset($_POST['creer']) && isset($_POST['nom'])) {
     }
     if (isset($personnage)) : ?>
         <p><a href="?deconnexion=1">Déconnexion</a></p>
-        <fieldset>
+        <fieldset id="personnage_infos">
             <legend>Mes informations</legend>
+            <?php if ($personnage->estEndormi()) {
+                echo '<p>Vous êtes endormi !<br> Réveil dans : ';
+                echo date("H:i:s", $personnage->reveilTime()) . ' heures</p>';
+            }
+            ?>
             <p>
-                Nom : <?php echo htmlspecialchars($personnage->getNom()); ?><br>
-                Dégâts : <?php echo $personnage->getDegats(); ?>
+                Nom : <?= $personnage->estEndormi() ? '💤 ' : '', htmlspecialchars($personnage->getNom()) ?><br>
+                Type : <?php echo htmlspecialchars(ucfirst($personnage->getType())); ?><br>
+                Dégâts : <?php echo $personnage->getDegats(); ?><br>
+                <?php
+                switch ($personnage->getType()) {
+                    case 'magicien':
+                        echo 'Magie : ';
+                        break;
+                    case 'guerrier':
+                        echo 'Protection : ';
+                        break;
+                }
+                echo $personnage->getAtout();
+                ?>
             </p>
         </fieldset>
-        <fieldset>
-            <legend>Qui attaquer ?</legend>
+        <fieldset id="menu_attaque">
+            <legend>Attaquer</legend>
             <p>
                 <?php
                 $ennemis = $manager->getList($personnage->getNom());
@@ -114,18 +198,44 @@ if (isset($_POST['creer']) && isset($_POST['nom'])) {
                     echo 'Aucun ennemi à attaquer';
                 } else {
                     foreach ($ennemis as $ennemi) {
-                        echo '<a href="?attaquer=' . $ennemi->getId() . '">' . htmlspecialchars($ennemi->getNom()) . '</a> (dégâts : ' . $ennemi->getDegats() . ')<br>';
+                        if ($ennemi->estEndormi()) {
+                            echo '💤 ';
+                        }
+                        echo '<a href="?attaquer=' . $ennemi->getId() . '">' . htmlspecialchars($ennemi->getNom()) . '</a> (' . ucfirst($ennemi->getType()) . ' - dégâts : ' . $ennemi->getDegats() . ')<br>';
                     }
                 }
                 ?>
             </p>
         </fieldset>
+        <?php if ($personnage->getType() == 'magicien') : ?>
+            <fieldset id="menu_sort">
+                <legend>Lancer un sort</legend>
+                <p>
+                    <?php
+                    $ennemis = $manager->getList($personnage->getNom());
+                    if (empty($ennemis)) {
+                        echo 'Aucun ennemi à ensorceler';
+                    } else {
+                        foreach ($ennemis as $ennemi) {
+                            echo htmlspecialchars($ennemi->getNom()) . ' (' . ucfirst($ennemi->getType()) . ' - dégâts : ' . $ennemi->getDegats() . ') <a href="?endormir=' . $ennemi->getId() . '">Endormir</a> - <a href="?reveiller=' . $ennemi->getId() . '">Réveiller</a><br>';
+                        }
+                    }
+                    ?>
+                </p>
+            </fieldset>
+        <?php endif ?>
+
     <?php else : ?>
         <form action="" method="post">
             <label for="nom">Nom : </label>
             <input type="text" name="nom" id="nom" maxlength="50">
+            <input type="submit" value="Utiliser ce personnage" name="utiliser"><br>
+            <input type="radio" name="type" id="guerrier" value="guerrier">
+            <label for="guerrier">Guerrier</label>
+            <input type="radio" name="type" id="magicien" value="magicien">
+            <label for="magicien">Magicien</label><br>
+            </select>
             <input type="submit" value="Créer ce personnage" name="creer">
-            <input type="submit" value="Utiliser ce personnage" name="utiliser">
         </form>
     <?php endif ?>
 

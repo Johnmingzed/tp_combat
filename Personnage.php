@@ -2,12 +2,12 @@
 
 abstract class Personnage
 {
-    private int $id;
-    private int $degats = 0;
-    private string $nom;
-    private int $timeEndormi = 0;
-    private string $type;
-    private int $atout = 0;
+    protected int $id;
+    protected int $degats = 0;
+    protected string $nom;
+    protected int $timeEndormi = 0;
+    protected string $type;
+    protected int $atout = 0;
 
     const DAMAGE = 5;
     const TARGET_ME = 1;

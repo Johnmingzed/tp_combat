@@ -16,7 +16,7 @@ class Magicien extends Personnage
             return self::NO_MANA;
         }
         // On endort la cible et on affiche le message
-        $time = ($this->getAtout() * 6) * 3600;
+        $time = ($this->getAtout() * 6) * 3600; // C'est beaucoup : 24h de base
         $cible->setTimeEndormi(time() + $time);
         return self::TARGET_SLEEP;
     }
