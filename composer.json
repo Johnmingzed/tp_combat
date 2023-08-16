@@ -1,5 +1,13 @@
 {
+    "autoload": {
+        "classmap": [
+            "./"
+        ]
+    },
     "require": {
         "rdehnhardt/var-dumper": "^1.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.3"
     }
 }
