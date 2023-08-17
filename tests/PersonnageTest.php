@@ -6,22 +6,38 @@
 
 declare(strict_types=1);
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+
+// Appel des dépendances nécessaires
+require 'Personnage.php';
+require 'Magicien.php';
 
 final class PersonnageTest extends TestCase
 {
-    public function testPersonnageRecoitDegats(): void
+    public static function baseDegatsProvider(): array
     {
-        $perso = new Magicien(['degats' => 0]);
+        return [
+            '0 dégat de base' => [0],
+            '50 dégats de base' => [50],
+            '99 dégats de base' => [99]
+        ];
+    }
+
+    #[DataProvider('baseDegatsProvider')]
+    public function testPersonnageRecoitDegats(int $base_degats): void
+    {
+        $perso = new Magicien(['degats' => $base_degats]);
 
         $resultHit = $perso->recevoirDegats();
 
         $this->assertSame(Personnage::TARGET_HIT, $resultHit);
     }
 
-    public function testPersonnageMeurt(): void
+    #[DataProvider('baseDegatsProvider')]
+    public function testPersonnageMeurt(int $base_degats): void
     {
-        $perso = new Magicien(['degats' => 99]);
+        $perso = new Magicien(['degats' => $base_degats]);
 
         $resultDeath = $perso->recevoirDegats();
 
